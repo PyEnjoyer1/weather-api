@@ -14,12 +14,8 @@ logger = get_logger(__name__)
 
 class OWMGeocodingService(OWMBaseService):
     
-    async def get_coordinates(self, city: str, multiple_results: bool = False):
-        """
-        Get coordinates for a city.
-        Returns only the most relevant match if multiple_results flag is set to False,
-        all results otherwise (capped at 5).
-        """
+    async def get_coordinates(self, city: str):
+        """Get coordinates for a city. Returns the most relevant match."""
         if not city:
             raise ValueError("City name must be provided.")
         normalized_city = city.strip().lower()
@@ -34,27 +30,16 @@ class OWMGeocodingService(OWMBaseService):
             error_msg = f"No geocoding data found for city: {city}"
             logger.warning(error_msg)
             raise OWMDataException(error_msg)
-        
-        result = []
-        for item in data:
-            try:
-                coords = OWMGeocodingResponseModel(**item)
-                result.append(coords)
-                logger.info(f"Added coordinates ({coords.lat}, {coords.lon}) for city: {city}.")
-            except ValidationError as e:
-                logger.warning(f"Invalid geocoding item {item}. Validation failed: {e}.")
-                continue
-
-        if not result:
-            error_msg = f"No valid geocoding results returned for {city}."
+            
+        try:
+            result = OWMGeocodingResponseModel(**data[0])
+            logger.info(f"Added coordinates ({result.lat}, {result.lon}) for city: {city}.")
+            return result
+        except ValidationError as e:
+            error_msg = f"Geocoding validation failed for city: {city}. Error: {e}"
             logger.error(error_msg)
             raise OWMDataValidationException(error_msg)
 
-        logger.info(f"{len(result)} geocoding items passed validation for {city}.")
-
-        # Return only the first/most relevant result if multiple_results flag is False, all results otherwise.
-        return result[0] if not multiple_results else result 
-    
 
             
 
