@@ -15,7 +15,11 @@ logger = get_logger(__name__)
 class OWMGeocodingService(OWMBaseService):
     
     async def get_coordinates(self, city: str, multiple_results: bool = False):
-        """Get coordinates for a city (returns most relevant match)."""
+        """
+        Get coordinates for a city.
+        Returns only the most relevant match if multiple_results flag is set to False,
+        all results otherwise (capped at 5).
+        """
         if not city:
             raise ValueError("City name must be provided.")
         normalized_city = city.strip().lower()
