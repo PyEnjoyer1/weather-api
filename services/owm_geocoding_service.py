@@ -24,11 +24,12 @@ class OWMGeocodingService(OWMBaseService):
             raise ValueError("City name must be provided.")
         normalized_city = city.strip().lower()
 
+        logger.info(f"Fetching coordinates for city: {city}.")
+
         data = await self._make_request(
             OWMConfig.GEOCODING_URL,
             params={"q": normalized_city, "limit": OWMConfig.GeocodingConfig.LIMIT}
         )
-
         if not data:
             error_msg = f"No geocoding data found for city: {city}"
             logger.warning(error_msg)
@@ -39,7 +40,7 @@ class OWMGeocodingService(OWMBaseService):
             try:
                 coords = OWMGeocodingResponseModel(**item)
                 result.append(coords)
-                logger.info(f"Added coordinates ({coords.lat} - {coords.lon}) for city: {city}.")
+                logger.info(f"Added coordinates ({coords.lat}, {coords.lon}) for city: {city}.")
             except ValidationError as e:
                 logger.warning(f"Invalid geocoding item {item}. Validation failed: {e}.")
                 continue
@@ -47,7 +48,7 @@ class OWMGeocodingService(OWMBaseService):
         if not result:
             error_msg = f"No valid geocoding results returned for {city}."
             logger.error(error_msg)
-            raise OWMDataException(error_msg)
+            raise OWMDataValidationException(error_msg)
 
         logger.info(f"{len(result)} geocoding items passed validation for {city}.")
 
